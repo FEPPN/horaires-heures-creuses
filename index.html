@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heures Creuses Enedis</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Nunito Sans', sans-serif;
+            font-weight: 600;
+            background: #f9f9f9;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        
+
+        @keyframes float {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            100% { transform: translate(-50px, -50px) rotate(360deg); }
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+            max-width: 800px;
+            width: 100%;
+            transition: transform 0.3s ease;
+            position: relative;
+            z-index: 1;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 2.5em;
+            font-weight: 700;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.1em;
+            font-weight: 400;
+            opacity: 0.8;
+        }
+
+        .search-container {
+            position: relative;
+            margin-bottom: 30px;
+        }
+
+        .search-wrapper {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        #search {
+            flex: 1;
+            min-width: 280px;
+            padding: 18px 24px;
+            border: 2px solid #e0e0e0;
+            border-radius: 60px;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        #search:focus {
+            border-color: #5A52FF;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1), 0 4px 20px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        #search::placeholder {
+            color: #aaa;
+            font-style: italic;
+        }
+
+        .search-btn {
+    padding: 18px 35px;
+    background: #5A52FF; /* Fond */
+    color: #ffffff; /* Texte violet */
+    border: 2px solid #5A52FF; /* Contour violet de 2px */
+    border-radius: 60px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); /* Ombre plus subtile */
+    position: relative;
+    overflow: hidden;
+        }
+
+        .search-btn:active {
+            transform: translateY(-1px);
+        }
+
+        .search-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        .search-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .status {
+            text-align: center;
+            margin-bottom: 25px;
+            padding: 15px 20px;
+            border-radius: 15px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .status.loading {
+            background: linear-gradient(135deg, rgba(255, 193, 7, 0.1), rgba(255, 152, 0, 0.1));
+            color: #f57c00;
+            border: 1px solid rgba(255, 193, 7, 0.3);
+        }
+
+        .status.error {
+            background: linear-gradient(135deg, rgba(244, 67, 54, 0.1), rgba(229, 57, 53, 0.1));
+            color: #c62828;
+            border: 1px solid rgba(244, 67, 54, 0.3);
+        }
+
+ #result:empty {
+    display: none;
+}
+
+#result {
+    min-height: 80px;
+    padding: 25px;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+
+
+        #result > p {
+            color: #666;
+            font-style: italic;
+            text-align: center;
+            padding: 30px;
+            font-size: 16px;
+        }
+
+        .result-item {
+            margin-bottom: 30px;
+            padding: 25px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.12), rgba(118, 75, 162, 0.08));
+            border-radius: 20px;
+            border-left: 5px solid #5A52FF;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .city-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .city-name {
+            color: #333;
+            font-size: 20px;
+            font-weight: 700;
+            flex-grow: 1;
+        }
+
+        .postal-code {
+            background: linear-gradient(135deg, #5A52FF, #A855F7);
+            color: white;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .time-slots {
+            display: grid;
+            gap: 12px;
+        }
+
+        .time-slot {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 16px 20px;
+            border-radius: 15px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .slot-label {
+    background: #FFFFFF ;
+    color: #5A52FF ;
+    font-size: 16px;
+    font-weight: 600;
+    text-align: center;
+}
+
+        .slot-time {
+            font-weight: 400;
+            color: #333;
+            font-size: 16px;
+        }
+
+        /* RÈGLE MODIFIÉE pour un encadré plus petit */
+        .no-data {
+            text-align: center;
+            padding: 16px 20px; /* Padding réduit (16px haut/bas, 20px côtés) */
+            color: #999;
+            font-style: italic;
+            background: linear-gradient(135deg, rgba(158, 158, 158, 0.1), rgba(189, 189, 189, 0.05));
+            border-radius: 15px;
+            border: 2px dashed #ddd;
+        }
+        
+        /* NOUVELLES règles pour gérer le texte à l'intérieur */
+        .no-data p {
+            margin: 0;
+            padding: 0;
+            line-height: 1.4; /* Améliore la lisibilité quand le texte est petit */
+        }
+
+        .no-data p:first-child {
+            font-weight: 600; /* On peut rendre la ligne principale un peu plus visible */
+            font-size: 14px;
+        }
+        
+        .no-data p:last-child {
+            margin-top: 6px; /* Espace réduit entre les deux lignes */
+            font-size: 12px; /* Texte secondaire plus petit et plus discret */
+            opacity: 0.8;
+        }
+
+        .suggestions {
+            margin-top: 25px;
+            padding: 20px;
+            background: linear-gradient(135deg, rgba(33, 150, 243, 0.08), rgba(30, 136, 229, 0.05));
+            border-radius: 15px;
+            border-left: 4px solid #2196F3;
+        }
+
+        .suggestions h4 {
+            color: #1976D2;
+            margin-bottom: 12px;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .suggestion-item {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 8px 15px;
+            margin: 4px;
+            border-radius: 20px;
+            color: #555;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(33, 150, 243, 0.2);
+        }
+
+        .suggestion-item:hover {
+            background: #2196F3;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+          .loader {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #5A52FF;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+        .disclaimer {
+    color: #666;        /* Même couleur que le sous-titre */
+    font-size: 0.9em;   /* Plus petit que le 1.1em du sous-titre */
+    font-style: italic; /* Texte en italique */
+    opacity: 0.7;       /* Un peu plus discret */
+    margin-top: 5px;    /* Un peu d'espace au-dessus */
+    font-weight: 400;
+}
+        /* --- Style pour la bulle d'information --- */
+
+/* Le conteneur principal qui va centrer notre icône */
+.info-tooltip-container {
+    position: relative; /* On garde juste cette ligne importante */
+}
+
+/* L'icône "i" elle-même */
+.info-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: help;
+    /* La taille est maintenant contrôlée par le SVG lui-même */
+}
+.info-icon svg {
+    width: 20px; /* Ajustez la taille de l'icône si besoin */
+    height: 20px;
+    color: #757575; /* Couleur du trait et du point */
+    transition: color 0.3s ease;
+}
+/* La bulle d'info (cachée par défaut) */
+.tooltip-text {
+    position: absolute;
+    bottom: 130%; /* Se positionne au-dessus de l'icône */
+    left: 50%;
+    transform: translateX(-50%); /* Astuce pour centrer parfaitement */
+    
+    background-color: #333; /* Fond sombre */
+    color: #fff; /* Texte blanc */
+    padding: 12px 16px;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    
+    width: 280px; /* Largeur de la bulle */
+    font-size: 13px;
+    font-weight: 400; /* Texte en normal */
+    text-align: center;
+    
+    /* L'animation d'apparition */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    z-index: 20; /* S'assure qu'elle passe au-dessus des autres éléments */
+}
+
+/* La petite flèche sous la bulle (créée avec un pseudo-élément) */
+.tooltip-text::after {
+    content: '';
+    position: absolute;
+    top: 100%; /* Se place juste en dessous de la bulle */
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 6px;
+    border-style: solid;
+    border-color: #333 transparent transparent transparent; /* Crée un triangle pointant vers le bas */
+}
+
+/* L'APPARITION AU SURVOL */
+.info-tooltip-container:hover .tooltip-text {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Petit effet bonus : l'icône change de couleur au survol */
+.info-tooltip-container:hover .info-icon svg {
+    color: #5A52FF; /* Le trait et le point deviennent violets au survol */
+}
+/* Nouveau conteneur pour aligner le sous-titre et l'icône */
+.subtitle-container {
+    display: flex;
+    justify-content: center; /* Centre le groupe horizontalement */
+    align-items: center;     /* Aligne le texte et l'icône verticalement */
+    gap: 8px;                /* Ajoute un petit espace entre le texte et l'icône */
+}
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+       @media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+
+    .container {
+        padding: 20px 15px;
+    }
+
+    .search-wrapper {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    #search, .search-btn {
+        width: 100%;
+        padding-top: 16px;
+        padding-bottom: 16px;
+    }
+
+    h1 {
+        font-size: 1.8em;
+        flex-direction: column;
+        gap: 8px;
+        line-height: 1.2;
+    }
+    
+    h1 img {
+        width: 45px;
+        height: 45px;
+    }
+    
+           
+    h1 span:first-of-type {
+    width: 100%;
+    text-align: center;
+    }
+    .subtitle, .disclaimer {
+        font-size: 0.9em;
+    }
+    
+    #result {
+        padding: 0;
+        background: transparent;
+        border: none;
+    }
+
+    .result-item {
+        padding: 20px 15px;
+        margin-bottom: 15px;
+    }
+
+    .city-name {
+        font-size: 1.2em;
+    }
+
+    .city-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .time-slot {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 12px 15px;
+    }
+    
+    .slot-label {
+        padding: 4px 12px;
+        font-size: 13px;
+    }
+
+    .autocomplete-list {
+        max-height: 150px;
+        font-size: 15px;
+    }
+    .subtitle-container {
+    flex-direction: column; /* Passe de l'horizontal (row) au vertical (column) */
+    gap: 12px;                /* Un peu plus d'espace vertical entre les deux éléments */
+    }
+}
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .slide-in {
+            animation: slideIn 0.4s ease-out;
+        }
+        .autocomplete-list:empty {
+    display: none;
+}
+        .autocomplete-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #ccc;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 10;
+    list-style: none;
+}
+
+.autocomplete-list li {
+    padding: 12px 18px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.autocomplete-list li:hover {
+    background: #f0f0f0;
+}
+h1 img {
+    width: 40px;
+    height: 40px;
+    vertical-align: middle;
+}
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>
+                <img src="https://d11o8pt3cttu38.cloudfront.net/wp-content/uploads/sites/12/2025/08/logo-papernest.png"
+                     alt="papernest"
+                     style="width: 60px; height: 60px; vertical-align: middle;" />
+                <span>Les heures creuses<br>dans ma commune</span>
+                <img src="https://d11o8pt3cttu38.cloudfront.net/wp-content/uploads/sites/12/2025/07/heures-creuses-par-commune.svg"
+                     alt="Heures Creuses dans ma commune"
+                     style="width: 60px; height: 60px; vertical-align: middle;" />
+            </h1>
+
+            <div class="subtitle-container">
+    <p class="subtitle">Trouvez facilement vos plages horaires d'heures creuses</p>
+    <div class="info-tooltip-container">
+        <span class="info-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+        </span>
+        <span class="tooltip-text">
+            Les horaires d'heures creuses peuvent varier d'une commune à une autre. Dans chaque commune, il peut également y avoir différentes plages horaires selon votre adresse exacte.
+        </span>
+    </div>
+</div>
+        </div>
+        
+        <div id="status" class="status loading">
+            <div class="loader"></div>
+            Chargement des données...
+        </div>
+        
+        <div class="search-container">
+            <div class="search-wrapper">
+                <label for="search" class="visually-hidden">Recherche par commune ou code postal</label>
+                <input type="text" id="search" placeholder="🔍 Commune ou code postal (ex: Paris, 75001...)" />
+                <ul id="autocomplete-list" class="autocomplete-list"></ul>
+                <button class="search-btn" onclick="searchHeures()">
+                    <span>Rechercher</span>
+                </button>
+            </div>
+        </div>
+        
+        <div id="result"></div>
+          </div>
+
+    <script>
+        let data = [];
+        let dataLoaded = false;
+     //   let rawData = []; // plus utilisé
+
+        // Chargement des données depuis le JSON
+fetch("enedis_heures_creuses_communes.json") // mets ici le chemin si le fichier est dans un sous-dossier
+  .then(response => {
+    if (!response.ok) throw new Error("Erreur de chargement JSON");
+    return response.json();
+  })
+  .then(json => {
+    data = json.map(item => ({
+        commune: item.commune,
+        commune_display: item.commune,
+        commune_norm: normalizeString(item.commune),
+        code_postal: item.code_postal,
+        horaires: item.horaires
+    }));
+
+    dataLoaded = true;
+    document.getElementById("status").style.display = 'none';
+    console.log(`${data.length} communes chargées depuis JSON`);
+})
+  .catch(error => {
+    console.error("Erreur JSON :", error);
+    document.getElementById("status").innerHTML = `❌ Erreur de chargement des données`;
+    document.getElementById("status").className = "status error";
+  });
+
+        // Pour avoir une tolérance sur les accents, tirets, apostrophes et les st
+           function normalizeString(str) {
+    if (!str) return "";
+    return str
+        .normalize("NFD")                         // décomposer les accents
+        .replace(/[\u0300-\u036f]/g, "")          // supprimer accents
+        .toLowerCase()
+        .replace(/['’]/g, " ")                    // apostrophes -> espace
+        .replace(/-/g, " ")                       // tirets -> espace
+        .replace(/\bst\b|ste\b|st\.\b|ste\.\b/g, "saint") // st/ste/st./ste. -> saint
+        .replace(/\s+/g, " ")                     // plusieurs espaces -> un
+        .trim();
+}
+
+
+
+   
+
+        // Fonction de recherche améliorée
+        function searchHeures(forceExact = false, exactCommune = "", exactCodePostal = "") {
+            document.getElementById('autocomplete-list').innerHTML = ''; // <-- LA LIGNE À AJOUTER
+        
+            const input = normalizeString(document.getElementById("search").value);
+            const result = document.getElementById("result");
+            
+            if (!dataLoaded) {
+                result.innerHTML = `
+                    <div class="no-data">
+                        <div class="loader"></div>
+                        <p>Les données ne sont pas encore chargées. Veuillez patienter...</p>
+                    </div>`;
+                return;
+            }
+            
+            if (!input) {
+                result.innerHTML = `
+                    <div class="no-data">
+                        <p>🔍 Veuillez entrer une commune ou un code postal pour commencer</p>
+                        <p style="font-size: 14px; margin-top: 10px;">Exemples: Paris, Lyon, 75001, 69000...</p>
+                    </div>`;
+                                return;
+            }
+
+            console.log("Recherche pour:", input);
+            
+            const matches = data.filter(row => {
+    if (forceExact) {
+        return (
+  row.commune_norm === normalizeString(exactCommune) &&
+  row.code_postal === exactCodePostal
+);
+
+
+    }
+
+            const communeNorm = row.commune_norm;
+            const cp = row.code_postal.toString();
+            
+            return communeNorm.includes(input) || cp.includes(input);
+
+});
+            console.log("Résultats trouvés:", matches.length);
+
+            if (matches.length > 0) {
+                result.innerHTML = matches.map(match => {
+                    if (match.horaires.length === 0) {
+                        return `
+                            <div class="result-item slide-in">
+                                <div class="city-header">
+                                    <div class="city-name">🏘️ ${capitalize(match.commune_display)}</div>
+                                    <div class="postal-code">${match.code_postal}</div>
+                                </div>
+                                <div class="no-data">
+                                    <p>⚠️ Aucune plage horaire disponible pour cette commune</p>
+                                    <p>Les données peuvent ne pas être disponibles pour toutes les communes, notamment si votre commune dépend d'une Entreprise Locale de Distribution.</p>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    return `
+                        <div class="result-item slide-in">
+                            <div class="city-header">
+                                <div class="city-name">🏘️ ${capitalize(match.commune_display)}</div>
+                                <div class="postal-code">${match.code_postal}</div>
+                            </div>
+                            <div class="time-slots">
+                            ${match.horaires.map((horaire, index) => {
+                                const sousPlages = horaire.split(";").map(s => s.trim()).join(" / ");
+                                return `
+                                    <div class="time-slot">
+                                        <span class="slot-label">Plage ${index + 1}</span>
+                                        <span class="slot-time">${sousPlages}</span>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                        </div>
+                    `;
+                }).join("");
+                
+                result.classList.add('fade-in');
+                setTimeout(() => result.classList.remove('fade-in'), 600);
+            } else {
+                // Recherche de suggestions
+                const suggestions = data.filter(row => 
+                    normalizeString(row.commune).includes(input.substring(0, 3)) || 
+                    row.code_postal.startsWith(input.substring(0, 2))
+                ).slice(0, 8);
+
+                
+                result.innerHTML = `
+    <div class="no-data fade-in">
+        <p>❌ Aucun résultat trouvé pour "<strong>${input}</strong>"</p>
+        <p style="font-size: 14px; margin-top: 10px; color: #777;">
+            Nous n'avons pas trouvé votre ville. Essayez avec une autre orthographe ou utilisez le code postal complet.
+        </p>
+    </div>
+    ${suggestions.length > 0 ? `
+        <div class="suggestions fade-in">
+            <h4>💡 Suggestions :</h4>
+            <div>
+                ${suggestions.map(s => 
+                    `<span class="suggestion-item" onclick="selectSuggestion('${s.commune_display}', '${s.code_postal}')">${capitalize(s.commune_display)} (${s.code_postal})</span>`
+                ).join('')}
+            </div>
+        </div>
+    ` : ''}
+`;
+            }
+            
+        }
+
+        // Fonction pour sélectionner une suggestion
+        function selectSuggestion(commune, codePostal) {
+            document.getElementById("search").value = commune;
+searchHeures(true, commune, codePostal);
+
+        }
+
+        // Fonction pour mettre en forme les noms
+        function capitalize(str) {
+            if (!str) return '';
+            return str
+                .toLowerCase()
+                .split(" ")
+                .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+                .join(" ");
+        }
+
+        // Recherche sur appui de la touche Entrée
+        document.getElementById("search").addEventListener("keypress", function(e) {
+            if (e.key === "Enter") {
+                searchHeures();
+            }
+        });
+
+        // Auto-focus sur le champ de recherche au chargement de la page
+window.addEventListener('load', () => {
+    document.getElementById('search').focus();
+});
+
+// Autocomplétion quand l'utilisateur tape du texte dans la barre de recherche
+document.getElementById("search").addEventListener("input", function(e) {
+    const input = normalizeString(e.target.value);
+    const list = document.getElementById("autocomplete-list");
+    list.innerHTML = "";
+
+    if (!input || input.length < 2 || !dataLoaded) {
+        list.innerHTML = "";
+        return;
+    }
+
+    const suggestions = data
+        .filter(item => {
+            const communeNorm = item.commune_norm;
+            const codePostal = item.code_postal?.toString() || "";
+            return communeNorm.includes(input) || codePostal.startsWith(input);
+        })
+        .sort((a, b) => a.commune.localeCompare(b.commune))
+        .slice(0, 8);
+
+    suggestions.forEach(suggestion => {
+        const li = document.createElement("li");
+        li.textContent = `${capitalize(suggestion.commune_display)} (${suggestion.code_postal})`;
+        li.addEventListener("click", () => {
+            document.getElementById("search").value = capitalize(suggestion.commune_display);
+            list.innerHTML = "";
+            searchHeures(true, suggestion.commune_display, suggestion.code_postal);
+        });
+        list.appendChild(li);
+    });
+});
+
+// Fermer la liste si on clique ailleurs
+document.addEventListener("click", function(e) {
+    if (!e.target.closest("#search") && !e.target.closest("#autocomplete-list")) {
+        document.getElementById("autocomplete-list").innerHTML = "";
+    }
+});
+
+    </script>
+</body>
+</html>
